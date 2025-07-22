@@ -1,38 +1,86 @@
-import express from 'express';
-import http from 'http';
-import { Server } from 'socket.io'; // ✅ socket.io's Server
-import cors from 'cors';
-import dotenv from 'dotenv';
-import cookieParser from 'cookie-parser';
+import express from "express";
+import mongoose from "mongoose";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import http from "http";
+import { Server as SocketIOServer } from "socket.io";
+import dotenv from "dotenv";
+import jwt from "jsonwebtoken";
+
+// Routes
+import authRoutes from "./routes/auth.routes.js";
+import userRoutes from "./routes/user.routes.js";
+import friendRoutes from "./routes/friend.routes.js";
+import chatRoutes from "./routes/chat.routes.js";
+
+// Socket Handlers
+import { registerChatHandlers } from "./sockets/chatHandler.js";
+import { registerCallHandlers } from "./sockets/callHandler.js";
 
 dotenv.config();
-
 const app = express();
+const server = http.createServer(app);
+const io = new SocketIOServer(server, {
+  cors: {
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+  },
+});
+
+// === Mongoose Setup ===
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch(err => {
+    console.error("❌ MongoDB error:", err);
+    process.exit(1);
+  });
+
+// === Middleware ===
 app.use(cors({
-  origin: process.env.Frontend_url,
-  credentials: true
+  origin: process.env.CLIENT_URL,
+  credentials: true,
 }));
 app.use(cookieParser());
 app.use(express.json());
 
-const server = http.createServer(app);
+// === API Routes ===
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/friends", friendRoutes);
+app.use("/api/chat", chatRoutes);
 
-const io = new Server(server, {
-  cors: {
-    origin: process.env.Frontend_url,
-    credentials: true
+// === WebSocket Auth Middleware ===
+io.use((socket, next) => {
+  const token = socket.handshake.headers.cookie
+    ?.split("; ")
+    ?.find(row => row.startsWith("access_token="))
+    ?.split("=")[1];
+
+  if (!token) return next(new Error("Unauthorized"));
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    socket.user = { _id: decoded.userId };
+    next();
+  } catch {
+    return next(new Error("Invalid token"));
   }
 });
 
-io.on("connection", (socket) => {
-  console.log("A user connected:", socket.id);
+// === Socket.IO Connection ===
+io.on("connection", socket => {
+  console.log("🔌 New socket connected:", socket.id);
+
+  // Register custom handlers
+  registerChatHandlers(socket, io);
+  registerCallHandlers(socket, io);
+
+  socket.on("disconnect", () => {
+    console.log("❌ Socket disconnected:", socket.id);
+  });
 });
 
-app.get('/me', (req, res) => {
-  res.send("Hello world");
-});
-
+// === Start Server ===
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`Server is listening on port ${PORT}`);
-});
+server.listen(PORT, () => console.log(`🚀 Server running on port http://localhost:${PORT}`));
