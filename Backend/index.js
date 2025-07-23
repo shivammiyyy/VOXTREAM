@@ -20,6 +20,8 @@ import { registerCallHandlers } from "./sockets/callHandler.js";
 dotenv.config();
 const app = express();
 const server = http.createServer(app);
+
+// === Socket.IO Setup ===
 const io = new SocketIOServer(server, {
   cors: {
     origin: process.env.CLIENT_URL,
@@ -27,12 +29,12 @@ const io = new SocketIOServer(server, {
   },
 });
 
-// === Mongoose Setup ===
+// === MongoDB Connection ===
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
   .catch(err => {
-    console.error("❌ MongoDB error:", err);
+    console.error("❌ MongoDB connection error:", err);
     process.exit(1);
   });
 
@@ -50,7 +52,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/friends", friendRoutes);
 app.use("/api/chat", chatRoutes);
 
-// === WebSocket Auth Middleware ===
+// === Socket.IO Auth Middleware ===
 io.use((socket, next) => {
   const token = socket.handshake.headers.cookie
     ?.split("; ")
@@ -68,11 +70,10 @@ io.use((socket, next) => {
   }
 });
 
-// === Socket.IO Connection ===
+// === Socket.IO Event Handlers ===
 io.on("connection", socket => {
-  console.log("🔌 New socket connected:", socket.id);
+  console.log("🔌 Socket connected:", socket.id);
 
-  // Register custom handlers
   registerChatHandlers(socket, io);
   registerCallHandlers(socket, io);
 
@@ -82,6 +83,7 @@ io.on("connection", socket => {
 });
 
 // === Start Server ===
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`🚀 Server running on port http://localhost:${PORT}`));
-io.listen(PORT+1,()=>console.log(`Socket is running`))
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`🚀 Server listening on http://localhost:${PORT}`);
+});

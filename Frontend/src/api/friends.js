@@ -1,4 +1,4 @@
-import API from "./axios";
+import API from "./api";
 
 // Send a friend request
 export const sendFriendRequest = async (receiverId) => {
@@ -25,3 +25,8 @@ export const getIncomingRequests = async () => {
   const res = await API.get("/friends/incoming");
   return res.data.requests;
 };
+
+export const getOutgoingRequests = async() => {
+  const res = await API.get("/friends/outgoing");
+  return res.data.requests;
+}

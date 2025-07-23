@@ -91,3 +91,17 @@ export const getIncomingRequests = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const getOutgoingRequests = async (req, res) => {
+  try {
+    const senderId = req.user._id;
+
+    const requests = await FriendRequest.find({ sender: senderId })
+      .populate("receiver", "-password");
+
+    res.json(requests);
+  } catch (error) {
+    console.error("Fetch Requests Error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};

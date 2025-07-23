@@ -1,4 +1,4 @@
-import API from "./axios";
+import API from "./api";
 
 // Signup a new user
 export const signupUser = async (userData) => {
@@ -25,6 +25,6 @@ export const completeOnboarding = async (profileData) => {
 
 // Get current user from cookie session
 export const getCurrentUser = async () => {
-  const res = await API.get("/auth/me");
+  const res = await API.post("/auth/me");
   return res.data.user;
 };

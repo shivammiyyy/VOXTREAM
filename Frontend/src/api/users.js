@@ -1,10 +1,13 @@
-import API from "./axios";
+import API from "./api";
 
 // Get users not friends + no requests
 export const getRecommendedUsers = async () => {
-  const res = await API.get("/users/recommended");
-  return res.data.users;
+  const res = await API.get("/users/recommended", {
+    withCredentials: true,
+  });
+  return res.data;
 };
+
 
 // Get friend list of current user
 export const getFriends = async () => {

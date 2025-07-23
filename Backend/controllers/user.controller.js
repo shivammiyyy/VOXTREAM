@@ -7,13 +7,17 @@ export const getRecommendedUsers = async (req, res) => {
   try {
     const currentUserId = req.user._id;
 
+    const user = await User.findById(currentUserId);
+    const friendIds = user.friends.map(id => id.toString());
+
     const sentRequests = await FriendRequest.find({ sender: currentUserId }).select("receiver");
     const receivedRequests = await FriendRequest.find({ receiver: currentUserId }).select("sender");
 
     const sentIds = sentRequests.map(req => req.receiver.toString());
     const receivedIds = receivedRequests.map(req => req.sender.toString());
+
     const excludeIds = new Set([
-      ...req.user.friends.map(id => id.toString()),
+      ...friendIds,
       ...sentIds,
       ...receivedIds,
       currentUserId.toString(),
@@ -29,6 +33,7 @@ export const getRecommendedUsers = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch recommended users" });
   }
 };
+
 
 // === Get Friend List ===
 export const getFriends = async (req, res) => {

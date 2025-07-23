@@ -43,8 +43,11 @@ export const registerCallHandlers = (
   }
 };
 
-export const sendCallRequest = (socket, calleeId) => {
-  socket.emit("call-request", { calleeId });
+export const sendCallRequest = (socket, receiverId, callType = "video") => {
+  socket.emit("call-request", {
+    receiverId,
+    type: callType,
+  });
 };
 
 export const sendCallResponse = (socket, callerId, accepted) => {

@@ -4,7 +4,8 @@ import {
   sendFriendRequest,
   acceptFriendRequest,
   deleteFriendRequest,
-  getIncomingRequests
+  getIncomingRequests,
+  getOutgoingRequests
 } from "../controllers/friend.controller.js";
 
 const router = express.Router();
@@ -23,5 +24,7 @@ router.delete("/delete", deleteFriendRequest);
 
 // Get incoming friend requests
 router.get("/incoming", getIncomingRequests);
+
+router.get("/outgoing",getOutgoingRequests)
 
 export default router;
