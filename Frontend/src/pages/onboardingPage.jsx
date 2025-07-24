@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
-
+import { completeOnboarding } from "../api/auth";
 const OnboardingPage = () => {
-  const { onBoard } = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -26,9 +24,10 @@ const OnboardingPage = () => {
     setLoading(true);
 
     try {
-      await onBoard(form);
+      await completeOnboarding(form);
       navigate("/home");
     } catch (err) {
+      console.log(err)
       setError(err?.response?.data?.message || "Onboarding failed");
     } finally {
       setLoading(false);
