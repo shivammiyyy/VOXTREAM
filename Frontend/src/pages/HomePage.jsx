@@ -1,8 +1,17 @@
 import { useEffect, useState } from "react";
-import { getFriends, getRecommendedUsers } from "../api/users";
-import { acceptFriendRequest, deleteFriendRequest, getIncomingRequests, getOutgoingRequests, sendFriendRequest } from "../api/friends";
+import {
+  getFriends,
+  getRecommendedUsers,
+} from "../api/users";
+import {
+  acceptFriendRequest,
+  deleteFriendRequest,
+  getIncomingRequests,
+  getOutgoingRequests,
+  sendFriendRequest,
+} from "../api/friends";
 import Section from "../components/Shared/Section";
-import UserCard from "../components/User/UserCard"
+import UserCard from "../components/User/UserCard";
 import Navbar from "../components/Navbar";
 import { useNavigate } from "react-router-dom";
 
@@ -15,8 +24,9 @@ const HomePage = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
-
+    
+  });
+  
   const fetchData = async () => {
     const [f, r, i, o] = await Promise.all([
       getFriends(),
@@ -50,7 +60,10 @@ const HomePage = () => {
               key={user._id}
               user={user}
               actionLabel="Add Friend"
-              onAction={() => {sendFriendRequest(user._id)}}
+              onAction={async () => {
+                await sendFriendRequest(user._id);
+                await fetchData();
+              }}
             />
           ))}
         </Section>
@@ -61,9 +74,15 @@ const HomePage = () => {
               key={request._id}
               user={request.sender}
               actionLabel="Accept"
-              onAction={() => {acceptFriendRequest(request._id)}}
+              onAction={async () => {
+                await acceptFriendRequest(request._id);
+                await fetchData();
+              }}
               secondaryActionLabel="Reject"
-              onSecondaryAction={() => {(deleteFriendRequest(request._id))}}
+              onSecondaryAction={async () => {
+                await deleteFriendRequest(request._id);
+                await fetchData();
+              }}
             />
           ))}
         </Section>
@@ -74,7 +93,10 @@ const HomePage = () => {
               key={request._id}
               user={request.receiver}
               actionLabel="Cancel"
-              onAction={() => {deleteFriendRequest(request._id)}}
+              onAction={async () => {
+                await deleteFriendRequest(request._id);
+                await fetchData();
+              }}
             />
           ))}
         </Section>

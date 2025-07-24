@@ -23,10 +23,10 @@ export const deleteFriendRequest = async (requestId) => {
 // Get incoming requests to this user
 export const getIncomingRequests = async () => {
   const res = await API.get("/friends/incoming");
-  return res.data.requests;
+  return res.data;
 };
 
 export const getOutgoingRequests = async() => {
   const res = await API.get("/friends/outgoing");
-  return res.data.requests;
+  return res.data;
 }

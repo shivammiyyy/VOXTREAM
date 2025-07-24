@@ -12,5 +12,5 @@ export const getRecommendedUsers = async () => {
 // Get friend list of current user
 export const getFriends = async () => {
   const res = await API.get("/users/friends");
-  return res.data.friends;
+  return res.data;
 };
