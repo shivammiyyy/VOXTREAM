@@ -7,9 +7,7 @@ import {
   sendMessage,
   requestChatHistory,
 } from "../sockets/chatHandlers";
-import {
-  sendCallRequest,
-} from "../sockets/callHandlers";
+import { sendCallRequest } from "../sockets/callHandlers";
 import MessageBubble from "../components/Chat/MessageBubble";
 
 const ChatPage = () => {
@@ -21,6 +19,7 @@ const ChatPage = () => {
   const [input, setInput] = useState("");
   const scrollRef = useRef();
 
+  // Register socket handlers and load chat history
   useEffect(() => {
     if (!socket || !friendId) return;
 
@@ -30,39 +29,42 @@ const ChatPage = () => {
           setMessages((prev) => [...prev, msg]);
         }
       },
-      onHistory: (msgs) => {
-        setMessages(msgs);
+      onHistory: ({ messages }) => {
+        setMessages(Array.isArray(messages) ? messages : []);
       },
     });
 
     requestChatHistory(socket, friendId);
   }, [socket, friendId]);
 
+  // Auto-scroll to bottom on new messages
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const handleSend = () => {
-    if (input.trim()) {
-      sendMessage(socket, friendId, input.trim());
-      setMessages((prev) => [
-        ...prev,
-        {
-          sender: user._id,
-          receiver: friendId,
-          content: input.trim(),
-          createdAt: new Date(),
-        },
-      ]);
-      setInput("");
-    }
+    const trimmed = input.trim();
+    if (!trimmed) return;
+
+    sendMessage(socket, friendId, trimmed);
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: user._id,
+        receiver: friendId,
+        content: trimmed,
+        createdAt: new Date(),
+      },
+    ]);
+
+    setInput("");
   };
 
- const startCall = (type) => {
-  sendCallRequest(socket, friendId, type);
-  window.location.href = `/call/${friendId}?type=${type}`;
-};
-
+  const startCall = (type) => {
+    sendCallRequest(socket, friendId, type);
+    window.location.href = `/call/${friendId}?type=${type}`;
+  };
 
   return (
     <div className="flex flex-col h-screen">
@@ -87,7 +89,7 @@ const ChatPage = () => {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 bg-gray-100">
-        {messages.map((msg, idx) => (
+        {Array.isArray(messages) && messages.map((msg, idx) => (
           <MessageBubble key={idx} msg={msg} isOwn={msg.sender === user._id} />
         ))}
         <div ref={scrollRef} />

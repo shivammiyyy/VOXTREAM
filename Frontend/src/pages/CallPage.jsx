@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useSocket } from "../contexts/SocketContext";
 import { useAuth } from "../contexts/AuthContext";
-import { registerCallHandlers, sendCallRequest } from "../sockets/callHandlers";
+import {
+  registerCallHandlers,
+  sendCallRequest,
+  sendSignalData,
+} from "../sockets/callHandlers";
 import PeerService from "../webrtc/PeerService";
-import { useSearchParams } from "react-router-dom";
-
 
 const CallPage = () => {
   const { user } = useAuth();
@@ -17,29 +19,53 @@ const CallPage = () => {
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
-  const [stream, setStream] = useState(null);
+  const [localStream, setLocalStream] = useState(null);
 
   useEffect(() => {
     if (!socket || !user || !friendId) return;
 
-    const constraints = {
-      audio: true,
-      video: callType === "video",
-    };
-    // Setup local media
-    navigator.mediaDevices.getUserMedia(constraints)
-      .then((localStream) => {
-        setStream(localStream);
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = localStream;
-        }
-        localStream.getTracks().forEach((track) => {
-          PeerService.peer.addTrack(track, localStream);
+    const startCall = async () => {
+      try {
+        // 1. Initialize peer
+        PeerService.initializePeer();
+
+        // 2. Handle ICE candidates (emit to other user)
+        PeerService.setIceCandidateCallback((candidate) => {
+          sendSignalData(socket, friendId, {
+            type: "candidate",
+            candidate,
+          });
         });
 
-        // Send offer to friend
-        sendCallRequest(socket, friendId);
+        // 3. Setup remote stream handler
+        PeerService.setRemoteStreamCallback((remoteStream) => {
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.srcObject = remoteStream;
+          }
+        });
 
+        // 4. Get local media
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+          video: callType === "video",
+        });
+
+        setLocalStream(stream);
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+        }
+
+        // 5. Add tracks to peer
+        PeerService.addLocalTracks(stream);
+
+        // 6. Create offer and send to callee
+        const offer = await PeerService.getOffer();
+        sendSignalData(socket, friendId, {
+          type: "offer",
+          sdp: offer,
+        });
+
+        // 7. Register socket listeners
         registerCallHandlers(socket, {
           onCallRequest: () => {},
           onCallResponse: () => {},
@@ -53,29 +79,45 @@ const CallPage = () => {
             }
           },
         });
-      })
-      .catch((err) => {
-        console.error("Failed to get local stream", err);
-        alert("Cannot access camera or microphone.");
+
+        // 8. Notify call start
+        sendCallRequest(socket, friendId, callType);
+      } catch (err) {
+        console.error("Failed to start call:", err);
+        alert("Could not access camera or microphone.");
         navigate("/chat/" + friendId);
-      });
+      }
+    };
+
+    startCall();
 
     return () => {
-      PeerService.peer.close();
+      PeerService.destroyPeer();
       socket.emit("leave-room", { userId: user._id, targetId: friendId });
-      stream?.getTracks().forEach((track) => track.stop());
+      localStream?.getTracks().forEach((track) => track.stop());
     };
-  }, [socket, user, friendId, navigate, stream, callType]);
+  }, [socket, user, friendId, callType, navigate, localStream]);
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-black text-white">
       <div className="flex-1 flex flex-col items-center justify-center p-4">
         <h2 className="mb-2">You</h2>
-        <video ref={localVideoRef} autoPlay playsInline muted className="rounded w-full max-w-md shadow-lg" />
+        <video
+          ref={localVideoRef}
+          autoPlay
+          playsInline
+          muted
+          className="rounded w-full max-w-md shadow-lg"
+        />
       </div>
       <div className="flex-1 flex flex-col items-center justify-center p-4">
         <h2 className="mb-2">Friend</h2>
-        <video ref={remoteVideoRef} autoPlay playsInline className="rounded w-full max-w-md shadow-lg" />
+        <video
+          ref={remoteVideoRef}
+          autoPlay
+          playsInline
+          className="rounded w-full max-w-md shadow-lg"
+        />
       </div>
       <div className="absolute top-4 right-4">
         <button
