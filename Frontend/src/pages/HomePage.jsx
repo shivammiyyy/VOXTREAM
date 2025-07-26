@@ -22,22 +22,30 @@ const HomePage = () => {
   const [outgoing, setOutgoing] = useState([]);
   const navigate = useNavigate();
 
+  // *** FIX ***
+  // Added an empty dependency array `[]`.
+  // Without it, `fetchData` would be called on every render, causing an infinite loop.
+  // Now, it only runs once when the component mounts.
   useEffect(() => {
     fetchData();
-    
-  });
-  
+  }, []); // <-- Empty dependency array added here
+
   const fetchData = async () => {
-    const [f, r, i, o] = await Promise.all([
-      getFriends(),
-      getRecommendedUsers(),
-      getIncomingRequests(),
-      getOutgoingRequests(),
-    ]);
-    setFriends(f);
-    setRecommended(r);
-    setIncoming(i);
-    setOutgoing(o);
+    try {
+      const [f, r, i, o] = await Promise.all([
+        getFriends(),
+        getRecommendedUsers(),
+        getIncomingRequests(),
+        getOutgoingRequests(),
+      ]);
+      setFriends(f);
+      setRecommended(r);
+      setIncoming(i);
+      setOutgoing(o);
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+      // Optional: Add user-facing error state here
+    }
   };
 
   return (

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useRef } from "react";
 import socket from "../sockets/socket";
 import { emitNewConnection, registerConnectionHandlers } from "../sockets/connectionHandlers";
-import { registerChatHandlers } from "../sockets/chatHandlers";
+import { registerChatHandlers, joinChatRoom } from "../sockets/chatHandlers"; // <-- Import new function
 import { registerCallHandlers } from "../sockets/callHandlers";
 
 const SocketContext = createContext();
@@ -30,13 +30,12 @@ export const SocketProvider = ({ user, children }) => {
         console.error("❌ Socket connection error:", err.message);
       });
 
-      // 📩 Register chat events
+      // Register all handlers once
       registerChatHandlers(currentSocket, {
         onMessage: (msg) => console.log("💬 Message received:", msg),
         onHistory: (msgs) => console.log("📜 Chat history:", msgs),
       });
 
-      // 📞 Register call events
       registerCallHandlers(currentSocket, {
         onCallRequest: (data) => console.log("📞 Incoming call request:", data),
         onCallResponse: (res) => console.log("📲 Call response:", res),
@@ -45,8 +44,7 @@ export const SocketProvider = ({ user, children }) => {
           console.log("📺 Remote stream received", stream);
         },
       });
-
-      // 🧩 Register other events (connection/chat presence)
+      
       registerConnectionHandlers(currentSocket, {
         onSocketConnected: (list) => console.log("🔌 Connected sockets:", list),
         onNotify: (data) => console.log("🔔 Notification:", data),
@@ -57,21 +55,27 @@ export const SocketProvider = ({ user, children }) => {
       isInitializedRef.current = true;
     }
 
-    // 🔌 Connect the socket (trigger the handshake)
     currentSocket.connect();
 
-    // 🔌 Clean up socket connection on unmount
     return () => {
       currentSocket.disconnect();
       isInitializedRef.current = false;
     };
   }, [user]);
+  
+  // Expose the socket instance and the new joinChatRoom function via context
+  const contextValue = {
+      socket: socketRef.current,
+      joinChatRoom: (friendId) => joinChatRoom(socketRef.current, friendId),
+  };
 
   return (
-    <SocketContext.Provider value={socketRef.current}>
+    <SocketContext.Provider value={contextValue}>
       {children}
     </SocketContext.Provider>
   );
 };
 
+
+// Custom hook to provide easy access to socket and actions
 export const useSocket = () => useContext(SocketContext);

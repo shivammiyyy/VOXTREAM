@@ -72,12 +72,31 @@ io.use((socket, next) => {
 // === Socket.IO Event Handlers ===
 io.on("connection", socket => {
   console.log("🔌 Socket connected:", socket.id);
+  
+  // *** MAJOR FIX ***
+  // The user joins a room named after their own user ID.
+  // This allows us to send events directly to this user using `io.to(userId).emit(...)`.
+  // This is essential for call signaling (e.g., 'call-request').
+  const userId = socket.user._id.toString();
+  socket.join(userId);
+  console.log(`✅ User ${userId} joined their personal room: ${userId}`);
 
+
+  // Register all other event handlers
   registerChatHandlers(socket, io);
   registerCallHandlers(socket, io);
+  
+  // Optional: Handle the 'new-connection' event if you want to track online status
+  socket.on("new-connection", () => {
+    // This event is sent from the frontend. You can use it to broadcast presence.
+    // For example, notify friends that this user is online.
+    console.log(`User ${userId} signaled a new connection.`);
+    // Example: io.to(friendsList).emit('friend-online', { userId });
+  });
 
   socket.on("disconnect", () => {
     console.log("❌ Socket disconnected:", socket.id);
+    // You could also emit a 'friend-offline' event here.
   });
 });
 
