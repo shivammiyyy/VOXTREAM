@@ -8,6 +8,7 @@ import {
   sendSignalData,
 } from "../sockets/callHandlers";
 import PeerService from "../webrtc/PeerService";
+import Navbar from "../components/Navbar";
 
 const CallPage = () => {
   const { user } = useAuth();
@@ -98,7 +99,7 @@ const CallPage = () => {
     };
   }, [socket, user, friendId, callType, navigate, localStream]);
 
-  return (
+  return ( 
     <div className="flex flex-col md:flex-row h-screen bg-black text-white">
       <div className="flex-1 flex flex-col items-center justify-center p-4">
         <h2 className="mb-2">You</h2>
