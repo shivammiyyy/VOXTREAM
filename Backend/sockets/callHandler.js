@@ -3,6 +3,11 @@ export const registerCallHandlers = (socket, io) => {
   // a room named after their own user ID. This is now handled in index.js.
   const callerId = socket.user._id.toString();
 
+  socket.on("new-connection", ({ userId }) => {
+  // Notifies the user with their socket ID
+  io.to(userId).emit("notify-connected-socket", { socketId: socket.id });
+});
+
   socket.on("call-request", ({ calleeId }) => {
     // This emit will now work because the callee joined a room with their ID on connection.
     io.to(calleeId).emit("call-request", {

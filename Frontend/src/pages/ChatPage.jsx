@@ -9,6 +9,8 @@ import {
 import { sendCallRequest } from "../sockets/callHandlers";
 import MessageBubble from "../components/Chat/MessageBubble";
 import Navbar from "../components/Navbar";
+import {Video, Phone} from "lucide-react";
+
 
 const ChatPage = () => {
   const { friendId } = useParams();
@@ -97,18 +99,20 @@ const ChatPage = () => {
         <div className="flex items-center justify-between p-4 border-b bg-white">
           <h2 className="text-lg font-semibold">VOXTREAM</h2>
           <div className="space-x-2">
-            <button
+            {/* <button
               onClick={() => startCall("audio")}
               className="px-3 py-1 bg-green-600 text-white rounded"
             >
               Audio Call
-            </button>
-            <button
+            </button> */}
+            <Phone onClick={()=> startCall("audio")} />
+            {/* <button
               onClick={() => startCall("video")}
               className="px-3 py-1 bg-blue-600 text-white rounded"
             >
               Video Call
-            </button>
+            </button> */}
+            <Video onClick={()=>startCall("video")} />
           </div>
         </div>
 

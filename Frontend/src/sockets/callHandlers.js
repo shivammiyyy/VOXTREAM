@@ -36,7 +36,7 @@ export const registerCallHandlers = (
   });
 
   socket.on("user-left", onUserLeft);
-
+  PeerService.initializePeer();
   // Attach ontrack listener for remote stream
   if (onRemoteStream && PeerService.peer) {
     PeerService.setRemoteStreamCallback(onRemoteStream);
@@ -45,9 +45,9 @@ export const registerCallHandlers = (
 
 export const sendCallRequest = (socket, receiverId, callType = "video") => {
   socket.emit("call-request", {
-    receiverId,
-    type: callType,
-  });
+  calleeId: receiverId,
+  type: callType,
+});
 };
 
 export const sendCallResponse = (socket, callerId, accepted) => {

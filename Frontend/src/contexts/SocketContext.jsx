@@ -30,6 +30,11 @@ export const SocketProvider = ({ user, children }) => {
         console.error("❌ Socket connection error:", err.message);
       });
 
+      currentSocket.on("error", (err) => {
+        console.error("⚠️ Socket error:", err);
+      });
+
+
       // Register all handlers once
       registerChatHandlers(currentSocket, {
         onMessage: (msg) => console.log("💬 Message received:", msg),

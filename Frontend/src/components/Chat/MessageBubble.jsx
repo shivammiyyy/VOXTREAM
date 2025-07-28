@@ -1,4 +1,6 @@
 const MessageBubble = ({ msg, isOwn }) => {
+  console.log(msg.timestamp);
+  
   return (
     <div className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-2`}>
       <div
@@ -8,7 +10,7 @@ const MessageBubble = ({ msg, isOwn }) => {
       >
         {msg.content}
         <div className="text-xs text-right mt-1 opacity-70">
-          {new Date(msg.createdAt).toLocaleTimeString()}
+          {new Date(msg.timestamp).toLocaleTimeString()}
         </div>
       </div>
     </div>
