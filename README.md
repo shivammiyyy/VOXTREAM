@@ -185,7 +185,7 @@ TURN server support can be added for NAT traversal (optional).
 ![Signup Page](./screenshots/signup.png)
 
 ### 🔑 Login Page
-![Login Page](./screenshots/Screenshot 2025-07-29 175654.png)
+![Login Page](./ScreenShots/Screenshot%202025-07-29%20175654.png)
 
 ### 🏠 Dashboard / Home
 ![Dashboard](./screenshots/dashboard.png)
@@ -194,10 +194,10 @@ TURN server support can be added for NAT traversal (optional).
 ![Chat Page](./screenshots/chat.png)
 
 ### 📞 Call Request Popup
-![Call Request](./screenshots/call request.png)
+![Call Request](./screenshots/call%20request.png)
 
 ### 🎥 Video Call Page
-![Call Page](./screenshots/callling.png)
+![Call Page](./screenshots/calling.png)
 
 ---
 
