@@ -179,13 +179,30 @@ TURN server support can be added for NAT traversal (optional).
 
 ---
 
+## 🖼️ Screenshots
+
+### 🔐 Signup Page
+![Signup Page](./screenshots/signup.png)
+
+### 🔑 Login Page
+![Login Page](./screenshots/Screenshot 2025-07-29 175654.png)
+
+### 🏠 Dashboard / Home
+![Dashboard](./screenshots/dashboard.png)
+
+### 💬 Chat Page
+![Chat Page](./screenshots/chat.png)
+
+### 📞 Call Request Popup
+![Call Request](./screenshots/call request.png)
+
+### 🎥 Video Call Page
+![Call Page](./screenshots/callling.png)
+
+---
+
 ## 📧 Contact
 
 Built by Shivammiyy.
 
-```
 
----
-
-Would you like me to auto-generate the screenshots section with placeholder markdown once you have actual UI images?
-```
