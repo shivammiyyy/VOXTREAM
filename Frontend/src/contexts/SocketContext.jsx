@@ -1,14 +1,19 @@
-import { createContext, useContext, useEffect, useRef } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import socket from "../sockets/socket";
 import { emitNewConnection, registerConnectionHandlers } from "../sockets/connectionHandlers";
-import { registerChatHandlers, joinChatRoom } from "../sockets/chatHandlers"; // <-- Import new function
-import { registerCallHandlers } from "../sockets/callHandlers";
+import { registerChatHandlers } from "../sockets/chatHandlers";
+import { registerCallHandlers, sendCallResponse } from "../sockets/callHandlers";
+import IncomingCallModal from "../components/Call/IncomingCallModal";
 
 const SocketContext = createContext();
 
 export const SocketProvider = ({ user, children }) => {
   const socketRef = useRef(socket);
   const isInitializedRef = useRef(false);
+  const navigate = useNavigate();
+
+  const [incomingCall, setIncomingCall] = useState(null);
 
   useEffect(() => {
     const currentSocket = socketRef.current;
@@ -19,42 +24,43 @@ export const SocketProvider = ({ user, children }) => {
     }
 
     if (!isInitializedRef.current) {
-      // ✅ Log successful connection
       currentSocket.on("connect", () => {
         console.log("✅ Socket connected:", currentSocket.id);
         emitNewConnection(currentSocket, user._id);
       });
 
-      // ❌ Log connection errors
       currentSocket.on("connect_error", (err) => {
         console.error("❌ Socket connection error:", err.message);
       });
 
-      currentSocket.on("error", (err) => {
-        console.error("⚠️ Socket error:", err);
-      });
-
-
-      // Register all handlers once
       registerChatHandlers(currentSocket, {
         onMessage: (msg) => console.log("💬 Message received:", msg),
         onHistory: (msgs) => console.log("📜 Chat history:", msgs),
       });
 
       registerCallHandlers(currentSocket, {
-        onCallRequest: (data) => console.log("📞 Incoming call request:", data),
-        onCallResponse: (res) => console.log("📲 Call response:", res),
+        onCallRequest: (data) => {
+          console.log("📞 Incoming call request:", data);
+          setIncomingCall({ ...data, type: data.type || "video" });
+        },
+        onCallResponse: (res) => {
+          console.log("📲 Call response:", res);
+        },
         onUserLeft: () => console.log("👋 User left the call"),
         onRemoteStream: (stream) => {
           console.log("📺 Remote stream received", stream);
         },
       });
-      
+
       registerConnectionHandlers(currentSocket, {
         onSocketConnected: (list) => console.log("🔌 Connected sockets:", list),
         onNotify: (data) => console.log("🔔 Notification:", data),
         onChatLeft: (data) => console.log("🚪 Chat left:", data),
         onDisconnect: () => console.log("❌ Socket disconnected"),
+      });
+
+      currentSocket.on("error", (err) => {
+        console.error("⚠️ Socket error received:", err);
       });
 
       isInitializedRef.current = true;
@@ -67,20 +73,34 @@ export const SocketProvider = ({ user, children }) => {
       isInitializedRef.current = false;
     };
   }, [user]);
-  
-  // Expose the socket instance and the new joinChatRoom function via context
-  const contextValue = {
-      socket: socketRef.current,
-      joinChatRoom: (friendId) => joinChatRoom(socketRef.current, friendId),
+
+  const handleAcceptCall = () => {
+    if (!incomingCall) return;
+    sendCallResponse(socketRef.current, incomingCall.callerId, true);
+    navigate(`/call/${incomingCall.callerId}?type=${incomingCall.type}&initiator=false`);
+    setIncomingCall(null);
+  };
+
+  const handleRejectCall = () => {
+    if (!incomingCall) return;
+    sendCallResponse(socketRef.current, incomingCall.callerId, false);
+    setIncomingCall(null);
   };
 
   return (
-    <SocketContext.Provider value={contextValue}>
+    <SocketContext.Provider value={socketRef.current}>
       {children}
+
+      {incomingCall && (
+        <IncomingCallModal
+          callerId={incomingCall.callerId}
+          callType={incomingCall.type}
+          onAccept={handleAcceptCall}
+          onReject={handleRejectCall}
+        />
+      )}
     </SocketContext.Provider>
   );
 };
 
-
-// Custom hook to provide easy access to socket and actions
 export const useSocket = () => useContext(SocketContext);

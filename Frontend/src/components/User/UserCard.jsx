@@ -7,41 +7,46 @@ const UserCard = ({
   onSecondaryAction,
 }) => {
   return (
-    <div
-      className="flex items-center justify-between p-3 border rounded hover:bg-gray-50 cursor-pointer"
-      onClick={onClick}
-    >
-      <div className="flex items-center gap-3">
+    <div className="flex justify-between items-center p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition cursor-pointer group">
+      {/* Left: Profile Info */}
+      <div
+        className="flex items-center gap-4 flex-1"
+        onClick={onClick}
+      >
         <img
           src={user.profilePic || "/default-avatar.png"}
           alt={user.username}
-          className="w-10 h-10 rounded-full object-cover"
+          className="w-12 h-12 rounded-full object-cover border border-gray-300"
         />
         <div>
-          <p className="font-medium">{user.fullName}</p>
+          <p className="font-semibold text-gray-900 leading-tight">
+            {user.fullName}
+          </p>
           <p className="text-sm text-gray-500">@{user.username}</p>
         </div>
       </div>
 
-      <div className="flex gap-2">
+      {/* Right: Actions */}
+      <div className="flex items-center gap-2 ml-4">
         {actionLabel && (
           <button
-            className="bg-blue-600 text-white text-sm px-3 py-1 rounded hover:bg-blue-700"
             onClick={(e) => {
               e.stopPropagation();
               onAction?.();
             }}
+            className="px-3 py-1 text-sm font-medium bg-blue-600 text-white rounded hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-300"
           >
             {actionLabel}
           </button>
         )}
+
         {secondaryActionLabel && (
           <button
-            className="bg-gray-300 text-sm px-3 py-1 rounded hover:bg-gray-400"
             onClick={(e) => {
               e.stopPropagation();
               onSecondaryAction?.();
             }}
+            className="px-3 py-1 text-sm font-medium bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition focus:outline-none focus:ring-2 focus:ring-gray-300"
           >
             {secondaryActionLabel}
           </button>

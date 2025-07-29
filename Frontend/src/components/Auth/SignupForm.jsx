@@ -28,85 +28,99 @@ const SignupForm = ({ switchToLogin }) => {
       const res = await signup(form);
       navigate("/onboarding");
     } catch (err) {
-      setError(err?.response?.data?.message || "Signup failed");
+      setError(err?.response?.data?.message || "Signup failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <>
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-
-        <div>
-          <label className="block text-sm font-medium">Full Name</label>
-          <input
-            type="text"
-            name="fullName"
-            required
-            value={form.fullName}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-          />
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {error && (
+        <div className="bg-red-100 text-red-700 border border-red-300 p-3 rounded text-sm">
+          {error}
         </div>
+      )}
 
-        <div>
-          <label className="block text-sm font-medium">Username</label>
-          <input
-            type="text"
-            name="username"
-            required
-            value={form.username}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-          />
-        </div>
+      <div>
+        <label htmlFor="fullName" className="block text-sm font-medium mb-1">
+          Full Name
+        </label>
+        <input
+          id="fullName"
+          name="fullName"
+          type="text"
+          required
+          value={form.fullName}
+          onChange={handleChange}
+          className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+        />
+      </div>
 
-        <div>
-          <label className="block text-sm font-medium">Email</label>
-          <input
-            type="email"
-            name="email"
-            required
-            value={form.email}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-          />
-        </div>
+      <div>
+        <label htmlFor="username" className="block text-sm font-medium mb-1">
+          Username
+        </label>
+        <input
+          id="username"
+          name="username"
+          type="text"
+          required
+          value={form.username}
+          onChange={handleChange}
+          className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+        />
+      </div>
 
-        <div>
-          <label className="block text-sm font-medium">Password</label>
-          <input
-            type="password"
-            name="password"
-            required
-            value={form.password}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-          />
-        </div>
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium mb-1">
+          Email address
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          value={form.email}
+          onChange={handleChange}
+          className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+        />
+      </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
-        >
-          {loading ? "Creating account..." : "Sign Up"}
-        </button>
-      </form>
+      <div>
+        <label htmlFor="password" className="block text-sm font-medium mb-1">
+          Password
+        </label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          required
+          value={form.password}
+          onChange={handleChange}
+          className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+        />
+      </div>
 
-      <div className="mt-4 text-center text-sm">
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition disabled:opacity-50"
+      >
+        {loading ? "Creating account..." : "Sign Up"}
+      </button>
+
+      <p className="mt-4 text-sm text-center">
         Already have an account?{" "}
         <button
           type="button"
           onClick={switchToLogin}
           className="text-blue-600 font-semibold hover:underline"
         >
-          Log In
+          Log in
         </button>
-      </div>
-    </>
+      </p>
+    </form>
   );
 };
 

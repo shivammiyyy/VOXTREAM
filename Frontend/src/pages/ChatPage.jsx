@@ -9,137 +9,111 @@ import {
 import { sendCallRequest } from "../sockets/callHandlers";
 import MessageBubble from "../components/Chat/MessageBubble";
 import Navbar from "../components/Navbar";
-import {Video, Phone} from "lucide-react";
-
+import { Video, Phone } from "lucide-react";
 
 const ChatPage = () => {
   const { friendId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  // *** FIX ***
-  // useSocket now returns an object, so we destructure the 'socket' instance
-  // and the 'joinChatRoom' function we created earlier.
-  const { socket, joinChatRoom } = useSocket();
+  const socket = useSocket();
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const scrollRef = useRef();
 
   useEffect(() => {
-    // Ensure all dependencies are available before proceeding.
     if (!socket || !friendId || !user?._id) return;
 
-    // *** FIX ***
-    // 1. Handlers are now registered ONCE in SocketProvider. We no longer register them here.
-    // 2. We call the `joinChatRoom` function from our context to correctly join the chat room.
-    joinChatRoom(friendId);
-
-    // 3. We request the history for this chat.
+    socket.emit("join-room", { friendId });
     requestChatHistory(socket, friendId);
 
-    // We define handler functions for our specific component's logic.
     const handleNewMessage = (msg) => {
-      // Only add message to state if it belongs to this chat room.
       if (msg.sender === friendId || msg.receiver === friendId) {
         setMessages((prev) => [...prev, msg]);
       }
     };
 
     const handleHistory = ({ messages: chatHistory, receiverId }) => {
-      // Ensure the history is for the current friend.
       if (receiverId === friendId && Array.isArray(chatHistory)) {
         setMessages(chatHistory);
       }
     };
 
-    // Listen for events.
     socket.on("direct-message", handleNewMessage);
     socket.on("direct-chat-history", handleHistory);
 
-    // Cleanup: remove the listeners when the component unmounts or friendId changes.
     return () => {
       socket.off("direct-message", handleNewMessage);
       socket.off("direct-chat-history", handleHistory);
     };
-  }, [socket, friendId, user, joinChatRoom]);
+  }, [socket, friendId, user]);
 
-  // Auto-scroll on new messages
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Handle message send
   const handleSend = () => {
     const trimmed = input.trim();
     if (!trimmed || !socket) return;
 
-    // *** FIX ***
-    // The `senderId` is not needed as the backend gets it from the socket instance.
-    // We also REMOVED the optimistic UI update. The message will now appear
-    // only when the server broadcasts it back via the 'direct-message' event.
-    // This ensures a single source of truth and prevents duplicate messages.
     sendMessage(socket, friendId, trimmed);
     setInput("");
   };
 
-  // Start call
   const startCall = (type) => {
     if (!socket) return;
-    // *** FIX ***
-    // The `user._id` (callerId) is handled by the backend.
-    // We also pass a flag to tell the CallPage that this user is the initiator.
     sendCallRequest(socket, friendId, type);
     navigate(`/call/${friendId}?type=${type}&initiator=true`);
   };
 
   return (
-    <div>
+    <div className="flex flex-col h-screen">
       <Navbar />
-      <div className="flex flex-col h-screen">
-        <div className="flex items-center justify-between p-4 border-b bg-white">
-          <h2 className="text-lg font-semibold">VOXTREAM</h2>
-          <div className="space-x-2">
-            {/* <button
-              onClick={() => startCall("audio")}
-              className="px-3 py-1 bg-green-600 text-white rounded"
-            >
-              Audio Call
-            </button> */}
-            <Phone onClick={()=> startCall("audio")} />
-            {/* <button
-              onClick={() => startCall("video")}
-              className="px-3 py-1 bg-blue-600 text-white rounded"
-            >
-              Video Call
-            </button> */}
-            <Video onClick={()=>startCall("video")} />
-          </div>
-        </div>
 
-        <div className="flex-1 overflow-y-auto p-4 bg-gray-100">
-          {(messages || []).map((msg, idx) => (
-            <MessageBubble key={msg._id || idx} msg={msg} isOwn={msg.sender === user._id} />
-          ))}
-          <div ref={scrollRef} />
+      {/* Chat header */}
+      <div className="flex items-center justify-between px-6 py-3 border-b bg-white shadow-sm sticky top-0 z-10">
+        <h2 className="text-xl font-semibold text-blue-700">VOXTREAM</h2>
+        <div className="flex gap-4 text-blue-600">
+          <Phone
+            onClick={() => startCall("audio")}
+            className="w-5 h-5 cursor-pointer hover:text-blue-800 transition"
+          />
+          <Video
+            onClick={() => startCall("video")}
+            className="w-5 h-5 cursor-pointer hover:text-blue-800 transition"
+          />
         </div>
+      </div>
 
-        <div className="p-4 border-t bg-white">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              placeholder="Type your message..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              className="flex-1 border rounded px-3 py-2"
-            />
-            <button
-              onClick={handleSend}
-              className="bg-blue-600 text-white px-4 py-2 rounded"
-            >
-              Send
-            </button>
-          </div>
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 bg-gray-100">
+        {messages.map((msg, idx) => (
+          <MessageBubble
+            key={msg._id || idx}
+            msg={msg}
+            isOwn={msg.sender === user._id}
+          />
+        ))}
+        <div ref={scrollRef} />
+      </div>
+
+      {/* Input area */}
+      <div className="px-4 py-3 border-t bg-white sticky bottom-0">
+        <div className="flex items-center gap-3">
+          <input
+            type="text"
+            placeholder="Type your message..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            className="flex-1 border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onClick={handleSend}
+            className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition"
+          >
+            Send
+          </button>
         </div>
       </div>
     </div>

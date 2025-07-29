@@ -1,126 +1,143 @@
-// services/PeerService.js
-
 class PeerService {
   constructor() {
     this.peer = null;
-    this.remoteStream = null;              // MediaStream built from remote tracks
-    this.remoteStreamCallback = null;      // Hook to deliver new remote streams
-    this.iceCandidateCallback = null;      // Hook to deliver ICE candidates
+    this.remoteStreamCallback = null;
+    this.iceCandidateCallback = null;
   }
 
-  /** 
-   * (Re)initializes RTCPeerConnection with STUN/TURN ICE servers 
-   * and sets up onicecandidate & ontrack handlers.
-   */
   initializePeer() {
-    this.destroyPeer();  // Clean up any existing connection
+    this.destroyPeer(); // Reset if already exists
+
+    console.log("🧩 Initializing new RTCPeerConnection...");
 
     this.peer = new RTCPeerConnection({
       iceServers: [
-        // public STUN servers
-        { urls: "stun:stun.l.google.com:19302" },
-        { urls: "stun:global.stun.twilio.com:3478" },
-        // example TURN server
         {
-          urls: "turn:your.turn.server:3478",
-          username: "turnUser",
-          credential: "turnCredential",
+          urls: [
+            "stun:stun.l.google.com:19302",
+            "stun:global.stun.twilio.com:3478",
+          ],
         },
       ],
     });
 
-    // Whenever a local ICE candidate is found, pass it to signaling
+    // 📡 ICE Candidate discovery
     this.peer.onicecandidate = (event) => {
       if (event.candidate && this.iceCandidateCallback) {
+        console.log("📶 ICE candidate generated:", event.candidate);
         this.iceCandidateCallback(event.candidate);
       }
     };
 
-    // Whenever a remote track arrives, build or extend the remoteStream
+    // 🎥 Handle remote media stream
     this.peer.ontrack = (event) => {
-      if (!this.remoteStream) {
-        this.remoteStream = new MediaStream();
-      }
-      this.remoteStream.addTrack(event.track);
-
-      // Push the updated MediaStream to the UI/further logic
+      console.log("📺 Remote track received.");
       if (this.remoteStreamCallback) {
-        this.remoteStreamCallback(this.remoteStream);
+        const [remoteStream] = event.streams;
+        this.remoteStreamCallback(remoteStream);
       }
+    };
+
+    this.peer.oniceconnectionstatechange = () => {
+      console.log("🔄 ICE connection state:", this.peer.iceConnectionState);
+    };
+
+    this.peer.onsignalingstatechange = () => {
+      console.log("📶 Signaling state:", this.peer.signalingState);
     };
   }
 
-  /** Closes existing connection and clears streams. */
   destroyPeer() {
     if (this.peer) {
+      console.log("🧹 Destroying existing peer connection.");
       this.peer.close();
       this.peer = null;
-      this.remoteStream = null;
     }
   }
 
-  /** Register a callback to send ICE candidates to remote peer via your signaling */
   setIceCandidateCallback(cb) {
     this.iceCandidateCallback = cb;
   }
 
-  /** Register a callback to deliver the assembled remote MediaStream to your UI */
   setRemoteStreamCallback(cb) {
     this.remoteStreamCallback = cb;
   }
 
-  /** Add all tracks from a local MediaStream to the peer connection */
   addLocalTracks(stream) {
-    if (!this.peer || !stream) {
-      console.warn("Cannot add tracks: peer or stream not available.");
+    if (!this.peer || this.peer.signalingState === "closed") {
+      console.warn("❌ Cannot add tracks: peer not initialized or closed.");
       return;
     }
+
+    console.log("🎙️ Adding local media tracks...");
     stream.getTracks().forEach((track) => {
       this.peer.addTrack(track, stream);
     });
   }
 
-  /**
-   * Creates an SDP offer, sets it as local description, and returns it.
-   * Caller should signal this offer to the remote peer.
-   */
   async getOffer() {
-    if (!this.peer) return null;
-    const offer = await this.peer.createOffer();
-    await this.peer.setLocalDescription(offer);
-    return offer;
+    if (!this.peer) {
+      console.error("❌ Peer not initialized. Cannot create offer.");
+      return null;
+    }
+
+    try {
+      console.log("📨 Creating SDP offer...");
+      const offer = await this.peer.createOffer();
+      await this.peer.setLocalDescription(new RTCSessionDescription(offer));
+      console.log("✅ SDP offer created and local description set.");
+      return offer;
+    } catch (err) {
+      console.error("❌ Failed to create SDP offer:", err);
+      return null;
+    }
   }
 
-  /**
-   * Given a remote SDP offer, sets it as remote description,
-   * creates and sets a local SDP answer, and returns that answer.
-   * Caller should signal this answer back to the offerer.
-   */
-  async getAnswer(offerSdp) {
-    if (!this.peer) return null;
-    await this.peer.setRemoteDescription(new RTCSessionDescription(offerSdp));
-    const answer = await this.peer.createAnswer();
-    await this.peer.setLocalDescription(answer);
-    return answer;
+  async getAnswer(offer) {
+    if (!this.peer) {
+      console.error("❌ Peer not initialized. Cannot create answer.");
+      return null;
+    }
+
+    try {
+      console.log("📨 Received SDP offer. Creating answer...");
+      await this.peer.setRemoteDescription(new RTCSessionDescription(offer));
+      const answer = await this.peer.createAnswer();
+      await this.peer.setLocalDescription(new RTCSessionDescription(answer));
+      console.log("✅ SDP answer created and local description set.");
+      return answer;
+    } catch (err) {
+      console.error("❌ Failed to handle offer and create answer:", err);
+      return null;
+    }
   }
 
-  /** Apply an incoming SDP (offer or answer) as the remote description */
   async setRemoteDescription(sdp) {
-    if (!this.peer) return;
-    await this.peer.setRemoteDescription(new RTCSessionDescription(sdp));
+    if (!this.peer) {
+      console.error("❌ Peer not initialized. Cannot set remote description.");
+      return;
+    }
+
+    try {
+      console.log("📩 Setting remote SDP description...");
+      await this.peer.setRemoteDescription(new RTCSessionDescription(sdp));
+      console.log("✅ Remote description set.");
+    } catch (err) {
+      console.error("❌ Failed to set remote description:", err);
+    }
   }
 
-  /** Add a received ICE candidate to the peer connection */
   async addIceCandidate(candidate) {
     if (this.peer && candidate) {
       try {
-        await this.peer.addIceCandidate(new RTCIceCandidate(candidate));
+        console.log("📥 Adding received ICE candidate...");
+        await this.peer.addIceCandidate(candidate);
+        console.log("✅ ICE candidate added.");
       } catch (err) {
-        console.error("Failed to add ICE candidate:", err);
+        console.error("❌ Failed to add ICE candidate:", err);
       }
     }
   }
 }
 
-// Export a single instance for easy import/use in your components
 export default new PeerService();

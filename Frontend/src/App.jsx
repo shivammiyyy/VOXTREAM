@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 import LandingPage from "./pages/LandingPage";
 // import OnboardingPage from "./pages/OnboardingPage";
@@ -12,7 +12,7 @@ import OnboardingPage from "./pages/onboardingPage.jsx";
 
 const App = () => {
   return (
-    <Router>
+    <>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route
@@ -33,7 +33,7 @@ const App = () => {
         />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
-    </Router>
+    </>
   );
 };
 

@@ -23,61 +23,69 @@ const LoginForm = ({ switchToSignup }) => {
       const res = await login(form);
       navigate(res.user.isOnboarded ? "/chat" : "/onboarding");
     } catch (err) {
-      setError(err?.response?.data?.message || "Login failed");
+      setError(err?.response?.data?.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <>
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-
-        <div>
-          <label className="block text-sm font-medium">Email</label>
-          <input
-            type="email"
-            name="email"
-            required
-            value={form.email}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-          />
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {error && (
+        <div className="bg-red-100 text-red-700 border border-red-300 p-3 rounded text-sm">
+          {error}
         </div>
+      )}
 
-        <div>
-          <label className="block text-sm font-medium">Password</label>
-          <input
-            type="password"
-            name="password"
-            required
-            value={form.password}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-          />
-        </div>
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium mb-1">
+          Email address
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          value={form.email}
+          onChange={handleChange}
+          className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
-        >
-          {loading ? "Logging in..." : "Login"}
-        </button>
-      </form>
+      <div>
+        <label htmlFor="password" className="block text-sm font-medium mb-1">
+          Password
+        </label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          required
+          value={form.password}
+          onChange={handleChange}
+          className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
 
-      <div className="mt-4 text-center text-sm">
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition disabled:opacity-50"
+      >
+        {loading ? "Logging in..." : "Log In"}
+      </button>
+
+      <p className="mt-4 text-sm text-center">
         Don’t have an account?{" "}
         <button
           type="button"
           onClick={switchToSignup}
           className="text-blue-600 font-semibold hover:underline"
         >
-          Sign Up
+          Sign up
         </button>
-      </div>
-    </>
+      </p>
+    </form>
   );
 };
 

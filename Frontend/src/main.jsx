@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
+import { BrowserRouter as Router } from 'react-router-dom'
 import App from './App.jsx'
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx'
 import { SocketProvider } from './contexts/SocketContext.jsx'
@@ -14,7 +15,9 @@ const AppWithSocket = ()=>{
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <AuthProvider>
-       <AppWithSocket />
+      <Router>
+        <AppWithSocket />
+      </Router>
     </AuthProvider>
   </StrictMode>,
 )

@@ -1,29 +1,28 @@
 export const registerCallHandlers = (socket, io) => {
-  // NOTE: The logic here relies on the connected user having already joined
-  // a room named after their own user ID. This is now handled in index.js.
   const callerId = socket.user._id.toString();
 
+  // Notify this user of their socket ID
   socket.on("new-connection", ({ userId }) => {
-  // Notifies the user with their socket ID
-  io.to(userId).emit("notify-connected-socket", { socketId: socket.id });
-});
+    io.to(userId).emit("notify-connected-socket", { socketId: socket.id });
+  });
 
+  // Call request sent to callee
   socket.on("call-request", ({ calleeId }) => {
-    // This emit will now work because the callee joined a room with their ID on connection.
     io.to(calleeId).emit("call-request", {
       callerId,
       socketId: socket.id,
     });
   });
 
+  // Response back to caller
   socket.on("call-response", ({ callerId, accepted }) => {
-    // This also works because the original caller is in their own room.
     io.to(callerId).emit("call-response", {
       calleeId: socket.user._id,
       accepted,
     });
   });
 
+  // ICE/SDP signal transfer
   socket.on("signal-data", ({ targetId, signal }) => {
     io.to(targetId).emit("signal-data", {
       senderId: callerId,
@@ -31,10 +30,12 @@ export const registerCallHandlers = (socket, io) => {
     });
   });
 
+  // Leave the call room
   socket.on("leave-room", ({ targetId }) => {
     io.to(targetId).emit("user-left", { userId: callerId });
   });
 
+  // Optional chat presence notification
   socket.on("chat-left", ({ friendId }) => {
     io.to(friendId).emit("notify-chat-left", { userId: callerId });
   });
