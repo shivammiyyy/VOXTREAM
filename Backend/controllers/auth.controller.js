@@ -6,7 +6,7 @@ const setAuthCookie = (res, token) => {
   res.cookie("access_token", token, {
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     httpOnly: true,                 // Prevent JS access (XSS protection)
-    sameSite: "Strict",             // CSRF protection
+    sameSite: "none",             // CSRF protection
     secure: process.env.NODE_ENV === "production", // HTTPS only in production
   });
 };
